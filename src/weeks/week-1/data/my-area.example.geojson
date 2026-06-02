@@ -1,0 +1,26 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "name": "예시 영역", "kind": "area" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [127.020, 37.495],
+            [127.040, 37.495],
+            [127.040, 37.510],
+            [127.020, 37.510],
+            [127.020, 37.495]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "관심 지점 1", "kind": "poi" },
+      "geometry": { "type": "Point", "coordinates": [127.028, 37.500] }
+    }
+  ]
+}
