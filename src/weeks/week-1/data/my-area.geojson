@@ -1,0 +1,24 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "울산 옥동·신정동 일대",
+        "kind": "area"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [129.280, 35.528],
+            [129.300, 35.528],
+            [129.300, 35.545],
+            [129.280, 35.545],
+            [129.280, 35.528]
+          ]
+        ]
+      }
+    }
+  ]
+}
