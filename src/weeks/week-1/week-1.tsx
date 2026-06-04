@@ -8,11 +8,10 @@
  *
  * 자세한 미션 내용: ./README.md
  */
-import type { FeatureCollection } from 'geojson';
 
-// TODO: data/my-area.geojson 을 만든 뒤 아래 주석을 해제하세요.
-// import myArea from './data/my-area.geojson';
-const myArea: FeatureCollection | null = null;
+import myAreaText from './data/my-area.geojson?raw';
+
+const myArea = JSON.parse(myAreaText);
 
 const Week1 = () => {
   if (myArea == null) {
@@ -28,11 +27,21 @@ const Week1 = () => {
     );
   }
 
-  // TODO: features 개수 표시, Polygon ring 이 닫혀 있는지 검증 결과 표시
+  const featureCount = myArea.features.length;
+
+  const ring = myArea.features[0].geometry.coordinates[0];
+
+  const first = ring[0];
+  const last = ring[ring.length - 1];
+
+  const isRingClosed = first[0] === last[0] && first[1] === last[1];
+
   return (
     <section className="placeholder">
       <h2>Week 1 · GeoJSON</h2>
       <pre>{JSON.stringify(myArea, null, 2)}</pre>
+      <p>Feature 개수는 {featureCount}개 입니다!</p>
+      <p>Polygon ring은 {isRingClosed ? '닫혀' : '열려'}있습니다!</p>
     </section>
   );
 };
