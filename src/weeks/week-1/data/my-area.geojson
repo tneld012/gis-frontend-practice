@@ -19,6 +19,39 @@
           ]
         ]
       }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "울산대공원",
+        "kind": "park"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [129.2935081, 35.5315310]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "남부도서관",
+        "kind": "library"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [129.2950, 35.53587]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "옥서초등학교",
+        "kind": "school"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [129.2855, 35.53846]
+      }
     }
   ]
 }
