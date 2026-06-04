@@ -14,10 +14,10 @@
 - geojson.io 에 붙여넣어 의도한 위치에 그려지는지 확인한다.
 
 ## 완성 체크 (여기까지 되면 OK)
-- [ ] 유효한 `FeatureCollection`
-- [ ] Polygon ring 이 닫혀 있음 (첫 좌표 = 끝 좌표)
-- [ ] 각 Feature 에 의미 있는 `properties` 포함
-- [ ] geojson.io 에서 올바른 위치에 렌더링됨
+- [x] 유효한 `FeatureCollection`
+- [x] Polygon ring 이 닫혀 있음 (첫 좌표 = 끝 좌표)
+- [x] 각 Feature 에 의미 있는 `properties` 포함
+- [x] geojson.io 에서 올바른 위치에 렌더링됨
 
 > 참고: `data/my-area.example.geojson` 에 형식 예시가 있습니다. 그대로 복사하지 말고 직접 작성하세요.
 
