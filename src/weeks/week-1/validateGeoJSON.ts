@@ -9,19 +9,26 @@ export function validateGeoJSON(fc: FeatureCollection) {
       isRingClosed: false,
       hasEnoughPoints: false,
       isValidCoordinates: false,
+      isValid: false,
     };
   }
 
-  const ring = geometry.coordinates[0];
+  let isRingClosed = true;
+  let hasEnoughPoints = true;
+  let isValidCoordinates = true;
 
-  const first = ring[0];
-  const last = ring[ring.length - 1];
+  for (const ring of geometry.coordinates) {
+    if (ring.length < 4) {
+      hasEnoughPoints = false;
+    }
 
-  const isRingClosed = first[0] === last[0] && first[1] === last[1];
+    const first = ring[0];
+    const last = ring[ring.length - 1];
 
-  const hasEnoughPoints = ring.length >= 4;
+    if (first[0] !== last[0] || first[1] !== last[1]) {
+      isRingClosed = false;
+    }
 
-  function checkCoordinates(ring: number[][]) {
     for (const point of ring) {
       const lng = point[0];
       const lat = point[1];
@@ -32,13 +39,10 @@ export function validateGeoJSON(fc: FeatureCollection) {
         lat < -90 ||
         lat > 90
       ) {
-        return false;
-      }
+        isValidCoordinates = false;
+      } 
     }
-    return true;
   }
-
-  const isValidCoordinates = checkCoordinates(ring);
 
   const isValid =
     isRingClosed &&
