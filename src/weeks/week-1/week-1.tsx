@@ -9,10 +9,16 @@
  * 자세한 미션 내용: ./README.md
  */
 
-import { validateGeoJSON } from './validateGeoJSON';
-import myAreaText from './data/my-area.geojson?raw';
+import { validateGeoJSON } from "./validateGeoJSON";
+import myAreaText from "./data/my-area.geojson?raw";
 
-const myArea = JSON.parse(myAreaText);
+let myArea = null;
+
+try {
+  myArea = JSON.parse(myAreaText);
+} catch {
+  myArea = null;
+}
 
 const Week1 = () => {
   if (myArea == null) {
@@ -34,22 +40,30 @@ const Week1 = () => {
     <section className="placeholder">
       <h2>Week 1 · GeoJSON</h2>
       <pre>{JSON.stringify(myArea, null, 2)}</pre>
-      <p>Feature 개수는 {validationResult.featureCount}개 입니다!</p>  
-      <p>Polygon ring은 {validationResult.isRingClosed ? '닫혀' : '열려'}있습니다!</p>
-      <p>
-        {
-          validationResult.hasEnoughPoints
-            ? 'Polygon은 최소 점 개수를 만족합니다!'
-            : 'Polygon은 최소 4개의 점을 가져야합니다.'
-        }
-      </p>
-      <p>{
-          validationResult.isValidCoordinates
-            ? 'Polygon의 모든 점이 좌표 범위(경도 −180~180 / 위도 −90~90)를 만족합니다!'
-            : 'Polygon의 좌표는 경도 −180~180 / 위도 −90~90를 만족해야합니다.'
-        }
-      </p>
-      <p>GeoJSON 검증 결과: {validationResult.isValid ? '통과' : '실패'}</p>
+      <p>Feature 개수는 {validationResult.featureCount}개 입니다!</p>
+      <div>
+        {validationResult.hasPolygon ? (
+          <>
+            <p>
+              Polygon ring은 {validationResult.isRingClosed ? "닫혀" : "열려"}{" "}
+              있습니다!
+            </p>
+            <p>
+              {validationResult.hasEnoughPoints
+                ? "Polygon은 최소 점 개수를 만족합니다!"
+                : "Polygon은 최소 4개의 점을 가져야합니다."}
+            </p>
+            <p>
+              {validationResult.isValidCoordinates
+                ? "Polygon의 모든 점이 좌표 범위(경도 −180~180 / 위도 −90~90)를 만족합니다!"
+                : "Polygon의 좌표는 경도 −180~180 / 위도 −90~90를 만족해야합니다."}
+            </p>
+          </>
+        ) : (
+          <p>Polygon Feature가 없어 Polygon 검증을 수행할 수 없습니다.</p>
+        )}
+      </div>
+      <p>GeoJSON 검증 결과: {validationResult.isValid ? "통과" : "실패"}</p>
     </section>
   );
 };

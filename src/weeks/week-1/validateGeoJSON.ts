@@ -1,59 +1,48 @@
-import type { FeatureCollection } from "geojson";
+import type { FeatureCollection, Feature, Polygon } from "geojson";
+
+function isPolygonFeature(feature: Feature): feature is Feature<Polygon> {
+  return feature.geometry.type === "Polygon";
+}
 
 export function validateGeoJSON(fc: FeatureCollection) {
-  const geometry = fc.features[0].geometry;
+  const polygonFeatures = fc.features.filter(isPolygonFeature);
 
-  if (geometry.type !== 'Polygon' ) {
-    return {
-      featureCount: fc.features.length,
-      isRingClosed: false,
-      hasEnoughPoints: false,
-      isValidCoordinates: false,
-      isValid: false,
-    };
-  }
+  const hasPolygon = polygonFeatures.length > 0;
 
-  let isRingClosed = true;
-  let hasEnoughPoints = true;
-  let isValidCoordinates = true;
+  const isRingClosed = polygonFeatures.every((feature) =>
+    feature.geometry.coordinates.every((ring) => {
+      const first = ring[0];
+      const last = ring[ring.length - 1];
 
-  for (const ring of geometry.coordinates) {
-    if (ring.length < 4) {
-      hasEnoughPoints = false;
-    }
+      return first[0] === last[0] && first[1] === last[1];
+    }),
+  );
 
-    const first = ring[0];
-    const last = ring[ring.length - 1];
+  const hasEnoughPoints = polygonFeatures.every((feature) =>
+    feature.geometry.coordinates.every((ring) => ring.length >= 4),
+  );
 
-    if (first[0] !== last[0] || first[1] !== last[1]) {
-      isRingClosed = false;
-    }
+  const isValidCoordinates = polygonFeatures.every((feature) =>
+    feature.geometry.coordinates.every((ring) =>
+      ring.every((point) => {
+        const lng = point[0];
+        const lat = point[1];
 
-    for (const point of ring) {
-      const lng = point[0];
-      const lat = point[1];
-
-      if (
-        lng < -180 ||
-        lng > 180 ||
-        lat < -90 ||
-        lat > 90
-      ) {
-        isValidCoordinates = false;
-      } 
-    }
-  }
+        return lng >= -180 && lng <= 180 && lat >= -90 && lat < 90;
+      }),
+    ),
+  );
 
   const isValid =
-    isRingClosed &&
-    hasEnoughPoints &&
-    isValidCoordinates;
+    hasPolygon && isRingClosed && hasEnoughPoints && isValidCoordinates;
 
   return {
     featureCount: fc.features.length,
+    polygonCount: polygonFeatures.length,
+    hasPolygon,
     isRingClosed,
     hasEnoughPoints,
     isValidCoordinates,
-    isValid
+    isValid,
   };
 }
