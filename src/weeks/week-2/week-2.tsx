@@ -9,10 +9,12 @@
  *
  * 합격 기준: 부모 리렌더에도 지도가 다시 안 깨짐 / 클릭 feature 정확 / 인스턴스를 ref 로 관리
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+
+import type { Feature } from "geojson";
 
 import myAreaText from '../week-1/data/my-area.geojson?raw';
 
@@ -27,6 +29,78 @@ try {
 const Week2 = () => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const [selectedFeature, setSelectedFeature] =
+  useState<Feature | null>(null);
+  const selectedFeatureIdRef = useRef<string | number | null>(null); // feature.id가 숫자일 가능성 고려
+
+  const selectFeature = (feature:Feature) => {
+    setSelectedFeature(feature);
+
+    if (feature.geometry.type === "Point") {
+      const [lng, lat] = feature.geometry.coordinates;
+
+      mapRef.current?.flyTo({
+        center: [lng, lat],
+        zoom: 15,
+      });
+    }
+
+    if (feature.geometry.type === "Polygon") {
+      const ring = feature.geometry.coordinates[0];
+
+      let minLng = Infinity;
+      let minLat = Infinity;
+      let maxLng = -Infinity;
+      let maxLat = -Infinity;
+
+      for (const point of ring) {
+        const lng = point[0];
+        const lat = point[1];
+
+        minLng = Math.min(minLng, lng);
+        minLat = Math.min(minLat, lat);
+        maxLng = Math.max(maxLng, lng);
+        maxLat = Math.max(maxLat, lat);
+      }
+
+      mapRef.current?.fitBounds(
+        [
+          [minLng, minLat],
+          [maxLng, maxLat],
+        ],
+        {
+          padding: 50,
+        },
+      );
+    }
+
+    const featureId = feature.properties?.id;
+    if (featureId == null) return;
+
+    if (selectedFeatureIdRef.current != null) {
+      mapRef.current?.setFeatureState(
+        {
+          source: "my-area",
+          id: selectedFeatureIdRef.current,
+        },
+        {
+          selected: false,
+        },
+      );
+    }
+
+    mapRef.current?.setFeatureState(
+      {
+        source: "my-area",
+        id: featureId,
+      },
+      {
+        selected: true,
+      },
+    );
+
+    selectedFeatureIdRef.current = featureId;
+  };
 
   useEffect(() => {
     if (mapContainerRef.current == null || mapRef.current != null) return;
@@ -40,12 +114,13 @@ const Week2 = () => {
     mapRef.current = map;
 
     const initLayers = () => {
-      // TODO: Week1 GeoJSON 을 addSource → addLayer 로 표시
+      
       if (myArea ===null) return;
 
       map.addSource("my-area", {
         type: "geojson",
         data: myArea,
+        promoteId: "id",
       });
 
       map.addLayer({
@@ -54,7 +129,12 @@ const Week2 = () => {
         source: "my-area",
         filter: ["==", ["geometry-type"], "Polygon"],
         paint: {
-          "fill-color": "#4260f5",
+          "fill-color": [
+            "case",
+            ["boolean", ["feature-state", "selected"], false],
+            "#f97316",
+            "#4260f5",
+          ],
           "fill-opacity": 0.4,
         }
       });
@@ -65,8 +145,18 @@ const Week2 = () => {
         source: "my-area",
         filter: ["==", ["geometry-type"], "Point"], // geometry type이 Point인 Feature만 그리기
         paint: {
-          "circle-color": "#b0ddff",
-          "circle-radius": 6,
+          "circle-color": [
+            "case",
+            ["boolean", ["feature-state", "selected"], false],
+            "#f97316",
+            "#b0ddff",
+          ],
+          "circle-radius":  [
+            "case",
+            ["boolean", ["feature-state", "selected"], false],
+            10,
+            6,
+          ],
         }
       });
 
@@ -75,8 +165,10 @@ const Week2 = () => {
 
         if (feature == null) return;
 
-        const name = feature.properties.name;
-        const kind = feature.properties.kind;
+        selectFeature(feature);
+
+        const name = feature.properties?.name;
+        const kind = feature.properties?.kind;
 
         new maplibregl.Popup()
           .setLngLat(event.lngLat)
@@ -101,7 +193,6 @@ const Week2 = () => {
     };
   }, []);
 
-
   const moveToMyArea = () => {
     mapRef.current?.fitBounds(
       [
@@ -114,12 +205,52 @@ const Week2 = () => {
     );
   };
 
+  if (myArea == null) {
+    return <p>GeoJSON 데이터를 불러오지 못했습니다.</p>;
+  }
+
   return (
     <>
       <button onClick={moveToMyArea}>
         내 동네로 이동
       </button>
-      <div ref={mapContainerRef} className="map-container" />;
+
+      <aside>
+        <h3>Feature 목록</h3>
+        <ul>
+          {myArea.features.map((feature: Feature, index: number) => (
+            <li key={index}>
+              <button
+                type="button"
+                onClick={() => {
+                  selectFeature(feature);
+                }}
+              >
+                {feature.properties?.name} ({feature.properties?.kind})
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        <h3>선택한 Feature</h3>
+        {selectedFeature == null ? (
+          <p>아직 선택한 Feature가 없습니다!</p>
+        ) : (
+          <div>
+            <div style={{ fontSize: "16px", color: "#4260f5", fontWeight: "bold" }}>
+              {selectedFeature.properties?.name}
+            </div>
+            <div style={{ fontSize: "14px", color: "#666" }}>
+              {selectedFeature.properties?.kind}
+            </div>
+            <div style={{ fontSize: "12px", color: "#999" }}>
+              Geometry: {selectedFeature.geometry.type}
+            </div>
+          </div>
+        )}
+      </aside>
+
+      <div ref={mapContainerRef} className="map-container" />
     </>
   )
 };

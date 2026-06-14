@@ -4,6 +4,7 @@
     {
       "type": "Feature",
       "properties": {
+        "id": "ok-sinjeong-area",
         "name": "울산 옥동·신정동 일대",
         "kind": "area"
       },
@@ -30,6 +31,7 @@
     {
       "type": "Feature",
       "properties": {
+        "id": "ulsan-grand-park",
         "name": "울산대공원",
         "kind": "park"
       },
@@ -41,6 +43,7 @@
     {
       "type": "Feature",
       "properties": {
+        "id": "nambu-library",
         "name": "남부도서관",
         "kind": "library"
       },
@@ -52,6 +55,7 @@
     {
       "type": "Feature",
       "properties": {
+        "id": "okseo-elementary-school",
         "name": "옥서초등학교",
         "kind": "school"
       },
