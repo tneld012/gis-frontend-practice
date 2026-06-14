@@ -69,7 +69,7 @@ const Week2 = () => {
           "circle-radius": 6,
         }
       });
-      // TODO: map.on('click', layerId, ...) + popup 으로 properties 표시
+
       map.on("click", "my-area-fill", (event) => {
         const feature = event.features?.[0];
 
@@ -101,9 +101,27 @@ const Week2 = () => {
     };
   }, []);
 
-  // TODO: "내 동네로 이동" 버튼 → mapRef.current?.flyTo({ center, zoom })
 
-  return <div ref={mapContainerRef} className="map-container" />;
+  const moveToMyArea = () => {
+    mapRef.current?.fitBounds(
+      [
+        [129.280, 35.528],
+        [129.300, 35.545],
+      ],
+      {
+        padding: 50,
+      },
+    );
+  };
+
+  return (
+    <>
+      <button onClick={moveToMyArea}>
+        내 동네로 이동
+      </button>
+      <div ref={mapContainerRef} className="map-container" />;
+    </>
+  )
 };
 
 export default Week2;
