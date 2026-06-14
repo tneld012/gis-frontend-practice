@@ -14,6 +14,16 @@ import { useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
+import myAreaText from '../week-1/data/my-area.geojson?raw';
+
+let myArea = null;
+
+try {
+  myArea = JSON.parse(myAreaText);
+} catch {
+  myArea = null;
+}
+
 const Week2 = () => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -31,7 +41,57 @@ const Week2 = () => {
 
     const initLayers = () => {
       // TODO: Week1 GeoJSON 을 addSource → addLayer 로 표시
+      if (myArea ===null) return;
+
+      map.addSource("my-area", {
+        type: "geojson",
+        data: myArea,
+      });
+
+      map.addLayer({
+        id: "my-area-fill",
+        type: "fill",
+        source: "my-area",
+        filter: ["==", ["geometry-type"], "Polygon"],
+        paint: {
+          "fill-color": "#4260f5",
+          "fill-opacity": 0.4,
+        }
+      });
+
+      map.addLayer({
+        id: "my-area-points",
+        type: "circle",
+        source: "my-area",
+        filter: ["==", ["geometry-type"], "Point"], // geometry type이 Point인 Feature만 그리기
+        paint: {
+          "circle-color": "#b0ddff",
+          "circle-radius": 6,
+        }
+      });
       // TODO: map.on('click', layerId, ...) + popup 으로 properties 표시
+      map.on("click", "my-area-fill", (event) => {
+        const feature = event.features?.[0];
+
+        if (feature == null) return;
+
+        const name = feature.properties.name;
+        const kind = feature.properties.kind;
+
+        new maplibregl.Popup()
+          .setLngLat(event.lngLat)
+          .setHTML(`
+            <div>
+              <div style="font-size:16px; color:#4260f5; font-weight:bold;">
+                ${name}
+              </div>
+              <div style="font-size:14px; color:#666;">
+                ${kind}
+              </div>
+            </div>
+          `)
+          .addTo(map);
+      });
     };
     map.on('load', initLayers);
 
