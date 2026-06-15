@@ -29,9 +29,41 @@ try {
 const Week2 = () => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const popupRef = useRef<maplibregl.Popup | null>(null);
   const [selectedFeature, setSelectedFeature] =
   useState<Feature | null>(null);
   const selectedFeatureIdRef = useRef<string | number | null>(null); // feature.id가 숫자일 가능성 고려
+
+  const fitPolygonBounds = (feature: Feature) => {
+    if (feature.geometry.type !== "Polygon") return;
+
+    const ring = feature.geometry.coordinates[0];
+
+    let minLng = Infinity;
+    let minLat = Infinity;
+    let maxLng = -Infinity;
+    let maxLat = -Infinity;
+
+    for (const point of ring) {
+      const lng = point[0];
+      const lat = point[1];
+
+      minLng = Math.min(minLng, lng);
+      minLat = Math.min(minLat, lat);
+      maxLng = Math.max(maxLng, lng);
+      maxLat = Math.max(maxLat, lat);
+    }
+
+    mapRef.current?.fitBounds(
+      [
+        [minLng, minLat],
+        [maxLng, maxLat],
+      ],
+      {
+        padding: 50,
+      },
+    );
+  };
 
   const selectFeature = (feature:Feature) => {
     setSelectedFeature(feature);
@@ -46,32 +78,7 @@ const Week2 = () => {
     }
 
     if (feature.geometry.type === "Polygon") {
-      const ring = feature.geometry.coordinates[0];
-
-      let minLng = Infinity;
-      let minLat = Infinity;
-      let maxLng = -Infinity;
-      let maxLat = -Infinity;
-
-      for (const point of ring) {
-        const lng = point[0];
-        const lat = point[1];
-
-        minLng = Math.min(minLng, lng);
-        minLat = Math.min(minLat, lat);
-        maxLng = Math.max(maxLng, lng);
-        maxLat = Math.max(maxLat, lat);
-      }
-
-      mapRef.current?.fitBounds(
-        [
-          [minLng, minLat],
-          [maxLng, maxLat],
-        ],
-        {
-          padding: 50,
-        },
-      );
+      fitPolygonBounds(feature);
     }
 
     const featureId = feature.properties?.id;
@@ -160,7 +167,7 @@ const Week2 = () => {
         }
       });
 
-      map.on("click", "my-area-fill", (event) => {
+      const handleFeatureClick = (event:maplibregl.MapLayerMouseEvent) => {
         const feature = event.features?.[0];
 
         if (feature == null) return;
@@ -170,20 +177,25 @@ const Week2 = () => {
         const name = feature.properties?.name;
         const kind = feature.properties?.kind;
 
-        new maplibregl.Popup()
+        popupRef.current?.remove();
+
+        popupRef.current = new maplibregl.Popup()
           .setLngLat(event.lngLat)
           .setHTML(`
             <div>
-              <div style="font-size:16px; color:#4260f5; font-weight:bold;">
+              <div style="font-size: 16px; color: #4260f5; font-weight: bold;">
                 ${name}
               </div>
-              <div style="font-size:14px; color:#666;">
+              <div style="font-size: 14px; color: #666;">
                 ${kind}
               </div>
             </div>
           `)
           .addTo(map);
-      });
+      };
+
+      map.on("click", "my-area-fill", handleFeatureClick);
+      map.on("click", "my-area-points", handleFeatureClick);
     };
     map.on('load', initLayers);
 
@@ -194,15 +206,15 @@ const Week2 = () => {
   }, []);
 
   const moveToMyArea = () => {
-    mapRef.current?.fitBounds(
-      [
-        [129.280, 35.528],
-        [129.300, 35.545],
-      ],
-      {
-        padding: 50,
-      },
+    if (myArea == null) return;
+
+    const areaFeature = myArea.features.find(
+      (feature: Feature) => feature.geometry.type === "Polygon",
     );
+
+    if (areaFeature == null) return;
+
+    fitPolygonBounds(areaFeature);
   };
 
   if (myArea == null) {
@@ -219,7 +231,7 @@ const Week2 = () => {
         <h3>Feature 목록</h3>
         <ul>
           {myArea.features.map((feature: Feature, index: number) => (
-            <li key={index}>
+            <li key={feature.properties?.id ?? index}>
               <button
                 type="button"
                 onClick={() => {
