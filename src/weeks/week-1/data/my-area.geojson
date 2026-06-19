@@ -1,0 +1,68 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "ok-sinjeong-area",
+        "name": "울산 옥동·신정동 일대",
+        "kind": "area"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [129.280, 35.528],
+            [129.300, 35.528],
+            [129.300, 35.545],
+            [129.280, 35.545],
+            [129.280, 35.528]
+          ],
+          [
+            [129.2907789, 35.5313306],
+            [129.2949516, 35.5313306],
+            [129.2949516, 35.5294392],
+            [129.2907789, 35.5294392],
+            [129.2907789, 35.5313306]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "ulsan-grand-park",
+        "name": "울산대공원",
+        "kind": "park"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [129.2935081, 35.5315310]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "nambu-library",
+        "name": "남부도서관",
+        "kind": "library"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [129.2950, 35.53587]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "okseo-elementary-school",
+        "name": "옥서초등학교",
+        "kind": "school"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [129.2855, 35.53846]
+      }
+    }
+  ]
+}

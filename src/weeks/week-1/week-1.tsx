@@ -8,11 +8,17 @@
  *
  * 자세한 미션 내용: ./README.md
  */
-import type { FeatureCollection } from 'geojson';
 
-// TODO: data/my-area.geojson 을 만든 뒤 아래 주석을 해제하세요.
-// import myArea from './data/my-area.geojson';
-const myArea: FeatureCollection | null = null;
+import { validateGeoJSON } from "./validateGeoJSON";
+import myAreaText from "./data/my-area.geojson?raw";
+
+let myArea = null;
+
+try {
+  myArea = JSON.parse(myAreaText);
+} catch {
+  myArea = null;
+}
 
 const Week1 = () => {
   if (myArea == null) {
@@ -28,11 +34,36 @@ const Week1 = () => {
     );
   }
 
-  // TODO: features 개수 표시, Polygon ring 이 닫혀 있는지 검증 결과 표시
+  const validationResult = validateGeoJSON(myArea);
+
   return (
     <section className="placeholder">
       <h2>Week 1 · GeoJSON</h2>
       <pre>{JSON.stringify(myArea, null, 2)}</pre>
+      <p>Feature 개수는 {validationResult.featureCount}개 입니다!</p>
+      <div>
+        {validationResult.hasPolygon ? (
+          <>
+            <p>
+              Polygon ring은 {validationResult.isRingClosed ? "닫혀" : "열려"}{" "}
+              있습니다!
+            </p>
+            <p>
+              {validationResult.hasEnoughPoints
+                ? "Polygon은 최소 점 개수를 만족합니다!"
+                : "Polygon은 최소 4개의 점을 가져야합니다."}
+            </p>
+            <p>
+              {validationResult.isValidCoordinates
+                ? "Polygon의 모든 점이 좌표 범위(경도 −180~180 / 위도 −90~90)를 만족합니다!"
+                : "Polygon의 좌표는 경도 −180~180 / 위도 −90~90를 만족해야합니다."}
+            </p>
+          </>
+        ) : (
+          <p>Polygon Feature가 없어 Polygon 검증을 수행할 수 없습니다.</p>
+        )}
+      </div>
+      <p>GeoJSON 검증 결과: {validationResult.isValid ? "통과" : "실패"}</p>
     </section>
   );
 };
