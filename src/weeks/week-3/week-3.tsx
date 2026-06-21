@@ -9,36 +9,41 @@
  *  - 같은 화면을 vector 데모와 비교 (확대 깨짐 / 클릭 가능 여부)
  *  - (보너스) titiler.xyz 의 동적 COG 타일을 얹어보기 → "COG + TiTiler" 패턴 체험
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import type { StyleSpecification } from 'maplibre-gl';
 
 // 공개 위성영상 raster 타일 (API 키 불필요)
 const ESRI_SATELLITE_URL =
   'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 
+const RASTER_STYLE: StyleSpecification = {
+      version: 8,
+      sources: {
+        satellite: {
+          type: 'raster',
+          tiles: [ESRI_SATELLITE_URL],
+          tileSize: 256,
+          attribution: 'Esri, Maxar, Earthstar Geographics',
+        },
+      },
+      layers: [{ id: 'satellite', type: 'raster', source: 'satellite' }],
+};
+
 const Week3 = () => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+
+  const [mapType, setMapType] = useState<"raster" | "vector">("raster");
 
   useEffect(() => {
     if (mapContainerRef.current == null || mapRef.current != null) return;
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: {
-        version: 8,
-        sources: {
-          satellite: {
-            type: 'raster',
-            tiles: [ESRI_SATELLITE_URL],
-            tileSize: 256,
-            attribution: 'Esri, Maxar, Earthstar Geographics',
-          },
-        },
-        layers: [{ id: 'satellite', type: 'raster', source: 'satellite' }],
-      },
+      style: RASTER_STYLE,
       center: [127.0, 37.5],
       zoom: 6,
     });
@@ -53,7 +58,26 @@ const Week3 = () => {
     };
   }, []);
 
-  return <div ref={mapContainerRef} className="map-container" />;
+  useEffect(() => {
+    if (mapRef.current == null) return;
+
+    if (mapType === "raster") {
+      mapRef.current.setStyle(RASTER_STYLE);
+    }
+
+    if (mapType === "vector") {
+      mapRef.current.setStyle("https://demotiles.maplibre.org/style.json");
+    }
+  }, [mapType]);
+
+  return (
+    <>
+      <button onClick={() => setMapType("raster")}>위성 지도</button>
+      <button onClick={() => setMapType("vector")}>벡터 지도</button>
+      <p>현재 지도: {mapType === "raster" ? "위성 지도" : "벡터 지도"}</p>
+      <div ref={mapContainerRef} className="map-container" />
+    </>
+  )
 };
 
 export default Week3;
