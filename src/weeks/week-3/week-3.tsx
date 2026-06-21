@@ -29,7 +29,7 @@ const RASTER_STYLE: StyleSpecification = {
           attribution: 'Esri, Maxar, Earthstar Geographics',
         },
       },
-      layers: [{ id: 'satellite', type: 'raster', source: 'satellite' }],
+      layers: [{ id: 'satellite', type: 'raster', source: 'satellite', paint: { 'raster-opacity': 1 } }],
 };
 
 const Week3 = () => {
@@ -37,6 +37,7 @@ const Week3 = () => {
   const mapRef = useRef<maplibregl.Map | null>(null);
 
   const [mapType, setMapType] = useState<"raster" | "vector">("raster");
+  const [rasterOpacity, setRasterOpacity] = useState(1);
 
   useEffect(() => {
     if (mapContainerRef.current == null || mapRef.current != null) return;
@@ -59,6 +60,23 @@ const Week3 = () => {
   }, []);
 
   useEffect(() => {
+    const map = mapRef.current;
+
+    if (map == null) return;
+    if (mapType !== "raster") return;
+
+    const updateRasterOpacity = () => {
+      map.setPaintProperty("satellite", "raster-opacity", rasterOpacity);
+    };
+
+    if (map.isStyleLoaded()) {
+      updateRasterOpacity();
+    } else {
+      map.once("idle", updateRasterOpacity);
+    }
+  }, [rasterOpacity, mapType]);
+
+  useEffect(() => {
     if (mapRef.current == null) return;
 
     if (mapType === "raster") {
@@ -75,6 +93,11 @@ const Week3 = () => {
       <button onClick={() => setMapType("raster")}>위성 지도</button>
       <button onClick={() => setMapType("vector")}>벡터 지도</button>
       <p>현재 지도: {mapType === "raster" ? "위성 지도" : "벡터 지도"}</p>
+      {mapType === "raster" && (
+        <label>
+          위성 투명도: {rasterOpacity}
+          <input type="range" min="0" max="1" step="0.1" value={rasterOpacity} onChange={(event) => { setRasterOpacity(Number(event.target.value)); }}/>
+        </label>)}
       <div ref={mapContainerRef} className="map-container" />
     </>
   )
