@@ -19,6 +19,12 @@ import type { StyleSpecification } from 'maplibre-gl';
 const ESRI_SATELLITE_URL =
   'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 
+const COG_URL =
+  'https://opendata.digitalglobe.com/events/mauritius-oil-spill/post-event/2020-08-12/105001001F1B5B00/105001001F1B5B00.tif';
+
+const TITILER_COG_TILE_URL =
+  `http://localhost:8000/cog/tiles/WebMercatorQuad/{z}/{x}/{y}?url=${encodeURIComponent(COG_URL)}`;
+
 const RASTER_STYLE: StyleSpecification = {
       version: 8,
       sources: {
@@ -27,17 +33,43 @@ const RASTER_STYLE: StyleSpecification = {
           tiles: [ESRI_SATELLITE_URL],
           tileSize: 256,
           attribution: 'Esri, Maxar, Earthstar Geographics',
-        },
+        }
       },
       layers: [{ id: 'satellite', type: 'raster', source: 'satellite', paint: { 'raster-opacity': 1 } }],
+};
+
+const COG_STYLE: StyleSpecification = {
+  version: 8,
+  sources: {
+    cog: {
+      type: 'raster',
+      tiles: [TITILER_COG_TILE_URL],
+      tileSize: 256,
+    },
+  },
+  layers: [
+    {
+      id: 'cog-layer',
+      type: 'raster',
+      source: 'cog',
+      paint: { 'raster-opacity': 1 },
+    },
+  ],
 };
 
 const Week3 = () => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
 
-  const [mapType, setMapType] = useState<"raster" | "vector">("raster");
+  const [mapType, setMapType] = useState<"raster" | "vector" | "cog">("raster");
   const [rasterOpacity, setRasterOpacity] = useState(1);
+
+  const moveToCogArea = () => {
+      mapRef.current?.flyTo({
+        center: [57.7, -20.45],
+        zoom: 12,
+      });
+    };
 
   useEffect(() => {
     if (mapContainerRef.current == null || mapRef.current != null) return;
@@ -50,8 +82,17 @@ const Week3 = () => {
     });
     mapRef.current = map;
 
-    // TODO: 같은 데이터를 vector 데모(https://demotiles.maplibre.org/style.json)와 비교
-    // TODO: (보너스) titiler.xyz 동적 COG 타일을 raster source 로 추가 (README 참고)
+    map.on("click", (event) => {
+      const features = map.queryRenderedFeatures(event.point);
+
+      console.log(
+        features.map((feature) => ({
+          layerId: feature.layer.id,
+          geometryType: feature.geometry.type,
+          properties: feature.properties,
+        })),
+      );
+    });
 
     return () => {
       map.remove();
@@ -77,22 +118,33 @@ const Week3 = () => {
   }, [rasterOpacity, mapType]);
 
   useEffect(() => {
-    if (mapRef.current == null) return;
+    const map = mapRef.current;
+
+    if (map == null) return;
 
     if (mapType === "raster") {
-      mapRef.current.setStyle(RASTER_STYLE);
+      map.setStyle(RASTER_STYLE);
     }
 
     if (mapType === "vector") {
-      mapRef.current.setStyle("https://demotiles.maplibre.org/style.json");
+      map.setStyle("https://demotiles.maplibre.org/style.json");
+    }
+
+    if (mapType === "cog") {
+      map.setStyle(COG_STYLE);
+
+      map.once("idle", () => {
+        moveToCogArea();
+      });
     }
   }, [mapType]);
 
   return (
     <>
-      <button onClick={() => setMapType("raster")}>위성 지도</button>
-      <button onClick={() => setMapType("vector")}>벡터 지도</button>
-      <p>현재 지도: {mapType === "raster" ? "위성 지도" : "벡터 지도"}</p>
+      <button type="button" onClick={() => setMapType("raster")}>위성 지도</button>
+      <button type="button" onClick={() => setMapType("vector")}>벡터 지도</button>
+      <button type="button" onClick={() => setMapType("cog")}>COG 지도</button>
+      <p>현재 지도:{" "} {mapType === "raster" ? "위성 지도" : mapType === "vector" ? "벡터 지도" : "COG 지도"}</p>
       {mapType === "raster" && (
         <label>
           위성 투명도: {rasterOpacity}
