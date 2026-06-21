@@ -20,27 +20,42 @@ const ESRI_SATELLITE_URL =
   'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 
 const COG_URL =
-  'https://opendata.digitalglobe.com/events/mauritius-oil-spill/post-event/2020-08-12/105001001F1B5B00/105001001F1B5B00.tif';
+  'https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/54/T/WN/2023/8/S2A_54TWN_20230815_0_L2A/TCI.tif';
 
 const TITILER_COG_TILE_URL =
   `http://localhost:8000/cog/tiles/WebMercatorQuad/{z}/{x}/{y}?url=${encodeURIComponent(COG_URL)}`;
 
 const RASTER_STYLE: StyleSpecification = {
-      version: 8,
-      sources: {
-        satellite: {
-          type: 'raster',
-          tiles: [ESRI_SATELLITE_URL],
-          tileSize: 256,
-          attribution: 'Esri, Maxar, Earthstar Geographics',
-        }
-      },
-      layers: [{ id: 'satellite', type: 'raster', source: 'satellite', paint: { 'raster-opacity': 1 } }],
+  version: 8,
+  sources: {
+    satellite: {
+      type: 'raster',
+      tiles: [ESRI_SATELLITE_URL],
+      tileSize: 256,
+      attribution: 'Esri, Maxar, Earthstar Geographics',
+    }
+  },
+  layers: [
+    {
+      id: 'satellite', 
+      type: 'raster', 
+      source: 'satellite', 
+      paint: { 
+        'raster-opacity': 1
+      } 
+    }
+  ],
 };
 
 const COG_STYLE: StyleSpecification = {
   version: 8,
   sources: {
+    satellite: {
+      type: 'raster',
+      tiles: [ESRI_SATELLITE_URL],
+      tileSize: 256,
+      attribution: 'Esri, Maxar, Earthstar Geographics',
+    },
     cog: {
       type: 'raster',
       tiles: [TITILER_COG_TILE_URL],
@@ -49,10 +64,16 @@ const COG_STYLE: StyleSpecification = {
   },
   layers: [
     {
+      id: 'satellite',
+      type: 'raster',
+      source: 'satellite',
+      paint: { 'raster-opacity': 1 },
+    },
+    {
       id: 'cog-layer',
       type: 'raster',
       source: 'cog',
-      paint: { 'raster-opacity': 1 },
+      paint: { 'raster-opacity': 0.85 },
     },
   ],
 };
@@ -63,11 +84,12 @@ const Week3 = () => {
 
   const [mapType, setMapType] = useState<"raster" | "vector" | "cog">("raster");
   const [rasterOpacity, setRasterOpacity] = useState(1);
+  const [cogOpacity, setCogOpacity] = useState(0.85);
 
   const moveToCogArea = () => {
       mapRef.current?.flyTo({
-        center: [57.7, -20.45],
-        zoom: 12,
+        center: [141.5, 42.95],
+        zoom: 11,
       });
     };
 
@@ -121,6 +143,23 @@ const Week3 = () => {
     const map = mapRef.current;
 
     if (map == null) return;
+    if (mapType !== "cog") return;
+
+    const updateCogOpacity = () => {
+      map.setPaintProperty("cog-layer", "raster-opacity", cogOpacity);
+    };
+
+    if (map.isStyleLoaded()) {
+      updateCogOpacity();
+    } else {
+      map.once("idle", updateCogOpacity);
+    }
+  }, [cogOpacity, mapType]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+
+    if (map == null) return;
 
     if (mapType === "raster") {
       map.setStyle(RASTER_STYLE);
@@ -148,8 +187,33 @@ const Week3 = () => {
       {mapType === "raster" && (
         <label>
           위성 투명도: {rasterOpacity}
-          <input type="range" min="0" max="1" step="0.1" value={rasterOpacity} onChange={(event) => { setRasterOpacity(Number(event.target.value)); }}/>
-        </label>)}
+          <input 
+            type="range" 
+            min="0" 
+            max="1" 
+            step="0.1" 
+            value={rasterOpacity} 
+            onChange={(event) => { 
+              setRasterOpacity(Number(event.target.value)); 
+            }}
+          />
+        </label>
+      )}
+      {mapType === "cog" && (
+        <label>
+          COG 투명도: {cogOpacity}
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.1"
+            value={cogOpacity}
+            onChange={(event) => {
+              setCogOpacity(Number(event.target.value));
+            }}
+          />
+        </label>
+      )}
       <div ref={mapContainerRef} className="map-container" />
     </>
   )
