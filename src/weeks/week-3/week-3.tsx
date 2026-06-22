@@ -25,6 +25,21 @@ const COG_URL =
 const TITILER_COG_TILE_URL =
   `http://localhost:8000/cog/tiles/WebMercatorQuad/{z}/{x}/{y}?url=${encodeURIComponent(COG_URL)}`;
 
+type MapType = "raster" | "vector" | "cog";
+
+const MAP_TYPE_LABEL: Record<MapType, string> = {
+  raster: "위성 지도",
+  vector: "벡터 지도",
+  cog: "COG 지도",
+};
+
+const COG_BOUNDS: [number, number, number, number] = [
+  140.9997,
+  42.3563,
+  142.3545,
+  43.3529,
+];
+
 const RASTER_STYLE: StyleSpecification = {
   version: 8,
   sources: {
@@ -33,7 +48,7 @@ const RASTER_STYLE: StyleSpecification = {
       tiles: [ESRI_SATELLITE_URL],
       tileSize: 256,
       attribution: 'Esri, Maxar, Earthstar Geographics',
-    }
+    },
   },
   layers: [
     {
@@ -42,8 +57,8 @@ const RASTER_STYLE: StyleSpecification = {
       source: 'satellite', 
       paint: { 
         'raster-opacity': 1
-      } 
-    }
+      }, 
+    },
   ],
 };
 
@@ -60,6 +75,8 @@ const COG_STYLE: StyleSpecification = {
       type: 'raster',
       tiles: [TITILER_COG_TILE_URL],
       tileSize: 256,
+      bounds: COG_BOUNDS,
+      minzoom: 9,
     },
   },
   layers: [
@@ -79,19 +96,19 @@ const COG_STYLE: StyleSpecification = {
 };
 
 const Week3 = () => {
+  // refs
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const currentStyleTypeRef = useRef<MapType>("raster");
 
-  const [mapType, setMapType] = useState<"raster" | "vector" | "cog">("raster");
+  // state
+  const [mapType, setMapType] = useState<MapType>("raster");
   const [rasterOpacity, setRasterOpacity] = useState(1);
   const [cogOpacity, setCogOpacity] = useState(0.85);
 
-  const moveToCogArea = () => {
-      mapRef.current?.flyTo({
-        center: [141.5, 42.95],
-        zoom: 11,
-      });
-    };
+  // state를 따라가는 refs
+  const rasterOpacityRef = useRef(rasterOpacity);
+  const cogOpacityRef = useRef(cogOpacity);
 
   useEffect(() => {
     if (mapContainerRef.current == null || mapRef.current != null) return;
@@ -124,42 +141,9 @@ const Week3 = () => {
 
   useEffect(() => {
     const map = mapRef.current;
-
     if (map == null) return;
-    if (mapType !== "raster") return;
 
-    const updateRasterOpacity = () => {
-      map.setPaintProperty("satellite", "raster-opacity", rasterOpacity);
-    };
-
-    if (map.isStyleLoaded()) {
-      updateRasterOpacity();
-    } else {
-      map.once("idle", updateRasterOpacity);
-    }
-  }, [rasterOpacity, mapType]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-
-    if (map == null) return;
-    if (mapType !== "cog") return;
-
-    const updateCogOpacity = () => {
-      map.setPaintProperty("cog-layer", "raster-opacity", cogOpacity);
-    };
-
-    if (map.isStyleLoaded()) {
-      updateCogOpacity();
-    } else {
-      map.once("idle", updateCogOpacity);
-    }
-  }, [cogOpacity, mapType]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-
-    if (map == null) return;
+    if (currentStyleTypeRef.current === mapType) return;
 
     if (mapType === "raster") {
       map.setStyle(RASTER_STYLE);
@@ -171,19 +155,56 @@ const Week3 = () => {
 
     if (mapType === "cog") {
       map.setStyle(COG_STYLE);
-
-      map.once("idle", () => {
-        moveToCogArea();
-      });
     }
+
+    currentStyleTypeRef.current = mapType;
+
+    const handleIdle = () => {
+      if (map.getLayer("satellite")) {
+        map.setPaintProperty("satellite", "raster-opacity", rasterOpacityRef.current);
+      }
+
+      if (map.getLayer("cog-layer")) {
+        map.setPaintProperty("cog-layer", "raster-opacity", cogOpacityRef.current);
+      }
+
+      if (mapType === "cog") {
+        map.flyTo({
+          center: [141.5, 42.95],
+          zoom: 11,
+        });
+      }
+    };
+
+    map.once("idle", handleIdle);
+
+    return () => {
+      map.off("idle", handleIdle);
+    };
   }, [mapType]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (map == null) return;
+
+    rasterOpacityRef.current = rasterOpacity;
+    cogOpacityRef.current = cogOpacity;
+
+    if (mapType === "raster" && map.getLayer("satellite")) {
+      map.setPaintProperty("satellite", "raster-opacity", rasterOpacity);
+    }
+
+    if (mapType === "cog" && map.getLayer("cog-layer")) {
+      map.setPaintProperty("cog-layer", "raster-opacity", cogOpacity);
+    }
+  }, [mapType, rasterOpacity, cogOpacity]);
 
   return (
     <>
-      <button type="button" onClick={() => setMapType("raster")}>위성 지도</button>
-      <button type="button" onClick={() => setMapType("vector")}>벡터 지도</button>
-      <button type="button" onClick={() => setMapType("cog")}>COG 지도</button>
-      <p>현재 지도:{" "} {mapType === "raster" ? "위성 지도" : mapType === "vector" ? "벡터 지도" : "COG 지도"}</p>
+      <button type="button" onClick={() => setMapType("raster")}>{MAP_TYPE_LABEL.raster}</button>
+      <button type="button" onClick={() => setMapType("vector")}>{MAP_TYPE_LABEL.vector}</button>
+      <button type="button" onClick={() => setMapType("cog")}>{MAP_TYPE_LABEL.cog}</button>
+      <p>현재 지도: {MAP_TYPE_LABEL[mapType]}</p>
       {mapType === "raster" && (
         <label>
           위성 투명도: {rasterOpacity}
