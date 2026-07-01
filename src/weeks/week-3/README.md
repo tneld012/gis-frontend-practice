@@ -15,8 +15,8 @@
 - **vector 비교**: MapLibre 데모 vector(`https://demotiles.maplibre.org/style.json`)와 비교
   - 확대 시 깨짐 차이, 클릭(feature 조회) 가능 여부를 직접 확인
 - 완성 체크 (여기까지 되면 OK):
-  - [ ] 위성 raster 타일이 줌/팬에 맞춰 올바른 위치에 뜸
-  - [ ] raster vs vector 차이를 캡처/메모로 정리
+  - [x] 위성 raster 타일이 줌/팬에 맞춰 올바른 위치에 뜸
+  - [x] raster vs vector 차이를 캡처/메모로 정리
 
 ## 보너스 — "서빙하는 쪽" 체험 (GDAL 불필요, Docker 한 줄)
 
